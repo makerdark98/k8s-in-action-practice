@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jupyter-fileshare-pv
+spec:
+  storageClassName: manual
+  volumeMode: Filesystem
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /tmp/data/jupyter
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fileshare-pvc
+  labels:
+    component: jupyter
+spec:
+  volumeMode: Filesystem
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: jupyter-fileshare-pv
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: base-notebook
+  labels:
+    app: base-notebook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: base-notebook
+  template:
+    metadata:
+      labels:
+        app: base-notebook
+    spec:
+      containers:
+      - name: base-notebook
+        image: jupyter/base-notebook:notebook-6.4.11
+        # TODO: 이미지에 latex 관련된 파일 깔 수 있도록 custom docker image 사용하도록 변경하기
+        ports:
+        - containerPort: 8888
+        command: ["start-notebook.sh"]
+        args: ["--NotebookApp.password='<encrypted password>'", "--NotebookApp.ip='*'", "--NotebookApp.base_url='/jupyter'"]
+        env:
+          - name: DOCKER_STACKS_JUPYTER_CMD
+            value: nbclassic
+          - name: GRANT_SUDO
+            value: "yes"
+        volumeMounts:
+        - name: storage
+          mountPath: "/home/jovyan/work"
+        securityContext:
+          runAsUser: 0
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: fileshare-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: base-notebook
+spec:
+  type: LoadBalancer
+  selector:
+    app: base-notebook
+  ports:
+  - protocol: TCP
+    port: 8888
+    targetPort: 8888
