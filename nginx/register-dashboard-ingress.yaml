@@ -1,34 +1,26 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: root-ingress
+  name: registry-dashboard-ingress
   namespace: ingress
   annotations:
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
 spec:
   tls:
   - hosts:
-    - kube.makerdark98.dev
-    secretName: letsencrypt-prod
+    - registry-dashboard.makerdark98.dev
+    secretName: registry-dashboard-certificate
   rules:
-  - host: kube.makerdark98.dev
+  - host: registry-dashboard.makerdark98.dev
     http:
       paths:
-      - path: /jupyter
+      - path: /
         pathType: Prefix
         backend:
           service:
-            name: headless-svc-base-notebook
-            port:
-              number: 80
-      - path: /grafana
-        pathType: Prefix
-        backend:
-          service:
-            name: headless-svc-grafana
+            name: headless-svc-registry-dashboard
             port:
               number: 80
