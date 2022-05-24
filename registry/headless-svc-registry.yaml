@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: headless-svc-registry
+  namespace: ingress
+spec:
+  type: ExternalName
+  externalName: docker-registry.registry.svc.cluster.local # reference svc-C in ns-B
