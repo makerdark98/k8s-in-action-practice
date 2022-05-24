@@ -46,9 +46,11 @@ spec:
       labels:
         app: base-notebook
     spec:
+      imagePullSecrets:
+      - name: regcred
       containers:
       - name: base-notebook
-        image: jupyter/base-notebook:notebook-6.4.11
+        image: registry.makerdark98.dev/jupyter/notebook:0.0.1
         # TODO: 이미지에 latex 관련된 파일 깔 수 있도록 custom docker image 사용하도록 변경하기
         ports:
         - containerPort: 8888
